@@ -1,7 +1,5 @@
-## Install data transformation package 
-install.packages("dplyr")
-
-
+## Join data
+## Summary Statistics 
 ## Load Package 
 library("dplyr")
 
@@ -11,10 +9,8 @@ setwd("~/Documents/GitHub/datarockie-learning-/Data-Transformation")
 ## strings as factors = if it is a character don't change it to factor 
 imdb <- read.csv("imdb.csv",stringsAsFactors =  FALSE)
 
+favourite_films <- data.frame(id = c(5,10,25,30,98))
 
-## review data structure 
-glimpse(imdb)
+favourite_films %>% 
+  inner_join(imdb, by = c("id" = "NO") )
 
-## print head and tail 
-head(imdb,10)
-tail(imdb,10)
