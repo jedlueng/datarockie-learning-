@@ -1,0 +1,35 @@
+17 October 2022 
+Jedlueng 
+Machine learning 
+
+#Installing packages 
+```{r}
+library(tidyverse)
+library(carat)
+library(mlbench)
+```
+
+
+#Linear Regression
+##Checking head 
+Predicting MPG from this dataset 
+```{r}
+head(mtcars)
+```
+
+##Building Linear Regression model 
+mpg = f(hp,wt,am) = b0+b1 + b2 * wt + b3 * am 
+
+```{r}
+model_lm <- lm(mpg~hp + wt + am, data = mtcars)
+model_lm
+```
+
+##Train/Test split 
+```{r}
+model_lm_caret <- train(mpg~ hp + wt + am,
+                        data = mtcars,
+                        method = "lm")
+```
+
+
