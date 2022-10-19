@@ -1,6 +1,8 @@
-17 October 2022 
+17 October 2022 - 18 October 2022
 Jedlueng 
 Machine learning 
+https://topepo.github.io/caret/available-models.html
+
 
 #Installing packages 
 ```{r}
@@ -25,11 +27,129 @@ model_lm <- lm(mpg~hp + wt + am, data = mtcars)
 model_lm
 ```
 
-##Train/Test split 
+##Train/Test split + Building models
 ```{r}
-model_lm_caret <- train(mpg~ hp + wt + am,
+library(caret)
+#Train some variables
+model_lm_caret <- train(mpg ~ hp + wt + am,
                         data = mtcars,
                         method = "lm")
+
+#Train all variables 
+model_lm_caret_all <- train(mpg ~ .,
+                        data = mtcars,
+                        method = "lm")
+
+
+model_lm_caret$finalModel
+
 ```
+
+#KNN (k nearest neighbor)
+![alt text here](path-to-image-here)
+
+
+Machine find nearest neighbor utilizing Euclidean distance
+
+
+```{r}
+library(mlbench)
+
+data("BostonHousing")
+
+
+```
+
+##Split data 
+
+```{r}
+df <- BostonHousing
+n <- nrow(df)
+
+set.seed(42)
+id <-sample(1:n, size = n*0.8)
+
+train_df <- df[id, ]
+test_df <- df[-id, ]
+
+train_test_split <- function(df,train_size=0.8) {
+  set.seed(42)
+  n <- nrow(df)
+  id <- sample(1:n, size=n*train_size)
+  train_df <- df[id, ]
+  test_df <- df[-id, ]
+  return(list(train=train_df,test=test_df) )
+}
+
+split_data <- train_test_split(BostonHousing, 0.7)
+train_df <- split_data$train
+test_df <- split_data$test
+
+```
+
+
+## Train Model 
+```{r}
+set.seed(42)
+
+#k-fold cross validation
+grid_k <- data.frame(k = 2:5)
+ctrl_k <- trainControl(method ="cv",
+                       number = 5)
+
+#Bootstrap 
+ctrl_boot <- trainControl(
+  method = "boot",
+  number =100
+)
+
+print(grid_k)
+
+#K-Fold 
+knn_model <- train(medv ~ crim + indus + rm + age + tax,
+                   data = train_df,
+                   method = "knn",
+                   metric = "RMSE",
+                   tuneGrid = grid_k,
+                   trControl = ctrl_k)# k = 5 
+
+#Bootstrap 
+knn_model <- train(medv ~ crim + indus + rm + age + tax,
+                   data = train_df,
+                   method = "knn",
+                   metric = "RMSE",
+                   tuneGrid = grid_k,
+                   trControl = ctrl_boot)# k = 5 
+
+print(knn_model)  
+      
+```
+
+
+##Test model 
+scoring => Prediction 
+```{r}
+pred_medv <- predict(knn_model, newdata = test_df)
+
+test_rmse <- sqrt(mean((test_df$medv - pred_medv)**2))
+
+print(test_rmse)
+```
+
+Always choose simple model
+
+Higher K => underfit ,, lower K => overfit 
+
+
+##Save model 
+saveRDS(knn_model, "knn_1")
+```{r}
+##Save model 
+saveRDS(knn_model, "knn_1")
+##load model 
+readRDS("knn_1")
+
+```
+
 
 

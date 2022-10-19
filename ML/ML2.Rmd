@@ -1,0 +1,102 @@
+
+Jedlueng 18 October 2022 
+
+
+```{r}
+library(tidyverse)
+library(caret)
+library(mlbench)
+```
+
+#Pre-Processing 
+
+```{r}
+data("BostonHousing")
+
+df <- BostonHousing 
+
+```
+
+#1. Split data 
+```{r}
+df <- BostonHousing
+n <- nrow(df)
+
+set.seed(42)
+id <-sample(1:n, size = n*0.8)
+
+train_df <- df[id, ]
+test_df <- df[-id, ]
+
+train_test_split <- function(df,train_size=0.8) {
+  set.seed(42)
+  n <- nrow(df)
+  id <- sample(1:n, size=n*train_size)
+  train_df <- df[id, ]
+  test_df <- df[-id, ]
+  return(list(train=train_df,test=test_df) )
+}
+
+split_data <- train_test_split(BostonHousing, 0.7)
+train_df <- split_data$train
+test_df <- split_data$test
+```
+
+
+#Train Model K-Fold CV
+```{r}
+ctrl <- trainControl(
+  method = "cv",
+  number = 5,
+  verboseIter = TRUE
+)
+
+knn_model <-train(
+  medv~.,
+  data = train_df, 
+  method = "knn",
+  tuneLength = 5, 
+  TrControl = ctrl
+)
+```
+
+
+##Variable Importance 
+- Check the most importance (Highest influence variable)
+```{r}
+varImp(knn_model)
+```
+
+May choose only 5 
+
+
+
+New model with out age dis char 
+```{r}
+X <- train_df %>% select(crim,rm,tax)
+y <- train_df %>% select(medv)
+
+knn_model <- train(
+  medv ~., 
+  data = train_df %>% 
+    select(-age,-dis,-chas),
+  method = "knn",
+  preProcess = c("center","scale"),
+  metric = "RMSE",
+  tuneLength = 5, 
+  trControl = ctrl
+)
+
+varImp(knn_model)
+
+```
+
+
+#Test Model 
+```{r}
+p <- predict(knn_model, newdata = test_df)
+RMSE(p,test_df$medv)
+```
+Better RMSE using Center and scale (Normalize variables)
+
+
