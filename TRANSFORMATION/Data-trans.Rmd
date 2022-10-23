@@ -1,0 +1,563 @@
+Title: Data Transformation with R 
+Author : Jedlueng 
+Source: Data Transformation - Data Rockie 
+
+#Install Library 
+```{r}
+library(tidyverse)
+library(jsonlite)
+library(RSQLite)
+library(RPostgreSQL)
+library(sqldf)
+```
+
+
+
+Data Transformation is essential for machine learning and data analytics 
+
+
+- dplyr -> grammar of data manipulation 
+- using mtcars 
+
+
+#Viewing data 
+
+##Show rows name 
+
+```{r}
+view(mtcars) #View data 
+rownames(mtcars) #show all rows 
+
+```
+
+##Show column name 
+```{r}
+colnames(mtcars)
+```
+
+#DPLYR 
+5 functions 
+1. select() 
+2. filter() 
+3. arrange() 
+4. mutate()
+5. summarise() + group_by() 
+
+
+Comparing with SQL 
+5 functions 
+1. select() => SELECT
+2. filter() => WHERE
+3. arrange() => ORDER BY 
+4. mutate() => SELECT .. AS newColumn 
+5. summarise() + group_by() 
+
+##SELECT 
+```{r}
+select(mtcars, 1:5) #select column 1-5
+```
+
+```{r}
+select(mtcars, 1:3, 5, 10)
+```
+
+
+### SELECT Using column name 
+
+
+```{r}
+select(mtcars, mpg, wt, hp)
+```
+
+
+
+
+###SELECT both name and index 
+```{r}
+select(mtcars, mpg, wt, hp , 10:11)
+```
+
+
+###SELECT started with A 
+```{r}
+select(mtcars, starts_with("a"))
+```
+
+###SELECT ends_with()
+```{r}
+select(mtcars, ends_with("p"))
+```
+
+###SELECT contains() 
+```{r}
+select(mtcars, contains("a"))
+```
+
+
+
+###select everything() 
+```{r}
+select(mtcars, carb, everything())
+```
+
+#Making new column 
+```{r}
+mtcars$model <- rownames(mtcars) #model is a new column 
+#Remove rowname 
+rownames(mtcars) <- NULL
+
+select(mtcars, model, everything())
+```
+
+
+
+
+#Data Pipeline %>% (Pipe operator)
+
+##Bring data out of the function 
+```{r}
+select(mtcars, 1:5)
+
+mtcars %>% select(1:5)
+
+#Both of these are the same 
+```
+```{r}
+mtcars %>% 
+  select(mpg,hp,wt) %>% 
+  filter(hp < 100)
+```
+
+
+##Filter() 
+```{r}
+mtcars %>% 
+  select(mpg,hp,wt) %>% 
+  filter(hp <100, wt < 2)
+
+mtcars %>% 
+  select(mpg,hp,wt) %>% 
+  filter(hp <100| wt < 2)
+```
+##Arrage()
+
+##มากไปน้อย
+```{r}
+mtcars %>% 
+  select(mpg,hp,wt) %>% 
+  filter(hp<100|wt <2)%>%
+  arrange(hp)
+```
+##น้อยไปมาก
+
+```{r}
+mtcars %>% 
+  select(mpg,hp,wt) %>% 
+  filter(hp<100|wt <2)%>%
+  arrange(desc(hp))
+```
+
+
+
+##Filter data == WHERE SQL 
+
+```{r}
+mtcars %>% 
+  select(model, mpg, hp, wt,am) %>% 
+  filter(mpg > 25, mpg <=30 ) #More than 25 less than or equal to 30 
+
+
+mtcars %>% 
+  select(model, mpg, hp, wt,am) %>% 
+  filter(mpg %in% 25:30) #More than 25 less than or equal to 30 
+```
+
+
+```{r}
+mtcars %>% 
+  select(model, mpg,hp,wt,am) %>% 
+  filter(grepl("^Mazda", model))
+```
+
+
+#Mutate() 
+```{r}
+mtcars %>% 
+  select(model,mpg,hp,wt,am)%>%
+  mutate(hello = "hello") #Create new column hello 
+```
+
+##Using if statement 
+```{r}
+mtcars %>% 
+  select(model,mpg,hp,wt,am) %>%
+           mutate(hp_segment = if_else(hp<100,"low","high")) %>%
+  head(10)
+```
+
+
+##CASE WHEN 
+Create a new column 
+
+```{r}
+m2 <- mtcars %>% 
+  select(model,mpg,hp,wt,am) %>% 
+  mutate(hp_segment = if_else(hp<100,"low","high"),
+         hp_segment2 = case_when(
+           hp<100 ~"low",
+           hp <200 ~ "medium",
+           TRUE ~"high"
+         ))
+print(head(m2))
+```
+
+#Show data type 
+```{r}
+str(mtcars)
+```
+
+
+```{r}
+glimpse(mtcars)
+```
+
+
+#Change Binary to String 
+
+```{r}
+am <- mtcars %>% 
+  select(model,am) %>%
+  mutate(am = if_else(am == 0, "Auto", "Manual")) %>%
+  head(10) 
+```
+
+##Mutiple changed 
+```{r}
+mtcars <- mtcars %>%
+  mutate(am = if_else(am == 0, "Auto", "Manual"), 
+         vs = if_else(vs == 0, "V-Shaped", "Straight"))
+```
+
+
+#count 
+```{r}
+mtcars %>% 
+  count(am)
+```
+
+##Count multiple column 
+```{r}
+mtcars %>% 
+  count(am,vs) 
+```
+
+
+
+
+```{r}
+m3 <- mtcars %>% 
+  count(am,vs ) %>% 
+  mutate(percent = n/nrow(mtcars))
+```
+
+#Read Write CSV Files 
+```{r}
+write_csv(m3, "summary_mtcars.csv")
+#csv file will be in the current working directory
+```
+
+
+
+##Read csv 
+```{r}
+m3 <- read_csv("summary_mtcars.csv")
+m3
+```
+
+
+
+
+
+
+#Data Type 
+
+
+##Change string to factor 
+```{r}
+mtcars <- mtcars %>% 
+  select(model,mpg,vs,am) %>% 
+  mutate(vs = as.factor(vs),
+         am = as.factor(am))
+
+print(mtcars)
+```
+
+
+#SSummary 
+
+```{r}
+mtcars %>% 
+  group_by(am, vs) %>%
+  summarise(
+    avg_mpg = mean(mpg),
+    sum_mpg = sum(mpg),
+    min_mpg = min(mpg),
+    max_mpg = max(mpg),
+    var_mpg = var(mpg), 
+    n = n()
+  )
+```
+
+
+#Join table 
+
+both of these table can be join together 
+(PAUL)
+```{r}
+band_members
+```
+
+
+```{r}
+band_instruments
+```
+
+##inner join 
+
+```{r}
+inner_join(band_members,
+           band_instruments,
+           by = "name")
+
+
+```
+
+```{r}
+left_join(band_members,
+          band_instruments,
+          by = "name")
+```
+
+##Right Join 
+```{r}
+right_join(band_members, 
+           band_instruments,
+           by = "name")
+```
+
+
+
+##Full Join 
+
+```{r}
+full_join(band_members, 
+          band_instruments,
+          by = "name")
+```
+
+
+##Refactor 
+
+```{r}
+band_members %>% 
+  full_join(band_instruments, 
+            by = "name") %>% 
+  filter(name %in% c("Join", "Paul")) %>% 
+  mutate(hello = "OK")
+```
+
+
+
+Maximum 8-10 line > else too much 
+
+#NYCflights 13 
+
+```{r}
+library(nycflights13)
+```
+
+```{r}
+flights
+```
+
+```{r}
+view(flights)
+```
+
+```{r}
+flights %>%
+  filter(month == 9) %>%
+  count(origin,dest)
+```
+
+Questions 
+1. carriers most flight 
+2. in March - May 2013 
+3. Origin == JFK 
+
+
+
+```{r}
+df <-flights %>% 
+  filter(origin == "JFK" & month %in% c(3,4,5)) %>%
+  count(carrier) %>% 
+  arrange(desc(n))
+```
+
+##Sent back to users. 
+```{r}
+write_csv(df,"requested_data.csv")
+```
+
+
+#Mock up data Create new data 
+
+```{r}
+students <- data.frame( 
+  id = 1:5, 
+  name = c("toy", "joe", "anna", "mary", "kevin"),
+  cid = c(1,2,2,3,2))
+```
+
+
+
+```{r}
+course <- data.frame(
+  course_id = 1:3 ,
+  course_name = c("Data", "R", "Python"
+))
+```
+
+##Left Join 
+```{r}
+students %>% 
+  left_join(course, by = c("cid" = "course_id" )) %>%  filter(course_name == "R")
+```
+
+
+30 functions is essential for data analyst in R 
+
+#University (JOIN many tables)
+```{r}
+university <- data.frame(
+  uid = 1:2,
+  uname = c("University of London", "Chula University")
+)
+```
+
+##Join more than two tables
+```{r}
+students %>% 
+  left_join(course,by = c("cid"= "course_id")) %>% left_join(university, by = "uid")
+```
+
+
+
+#Wide -> Long Format Transformation 
+
+```{r}
+long_worldphones <- WorldPhones %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "year")%>% 
+  pivot_longer(N.Amer:Mid.Amer,
+               names_to = "Region",
+               values_to = "Sales")
+
+print(long_worldphones)
+```
+
+```{r}
+long_worldphones %>% 
+  group_by(Region) %>%
+  summarise(total_sales = sum(Sales))
+```
+
+
+##Long -> Wide format 
+
+```{r}
+wide_data <- long_worldphones %>% 
+  pivot_wider(names_from = "Region",
+              values_from = "Sales") 
+```
+
+
+##Write 
+```{r}
+write_csv(wide_data, "data.csv")
+```
+
+
+#Chinook.db 
+Connect SQL database 
+```{r}
+library(RSQLite)
+library(RPostgreSQL)
+```
+
+
+##Connect database 
+##Create connection > query > close con 
+```{r}
+#Connnect sql server 
+con <- dbConnect(SQLite(),"chinook.db")
+```
+
+```{r}
+#Show table 
+dbListTables(con)
+```
+
+```{r}
+#Select 
+dbGetQuery(con, "SELECT 
+                  firstname,
+                  lastname,
+                  country 
+                FROM customers 
+                WHERE country IN ('France', 'Austria', 'Belgium')")
+
+```
+
+##Join using SQLs 
+```{r}
+query01 <- dbGetQuery(con, "SELECT * FROM artists
+                      JOIN albums ON artists.artistid = albums.artistid
+                      JOIN tracks ON tracks.albumid = albums.albumid")
+```
+
+
+```{r}
+tracks <- query01
+```
+
+```{r}
+tracks %>% 
+  select(Composer, Milliseconds, Bytes, Unitprice) %>% 
+  head()
+```
+
+##Disconenct SQLs 
+```{r}
+dbDisconnect(con)
+con
+```
+
+
+#Sample data (Janitor)
+
+```{r}
+library(janitor)
+tracks_clean <- clean_names(tracks)
+#Clean everything (Duplicate and whatever)
+```
+
+
+```{r}
+set.seed(1)
+tracks_clean %>% 
+  select(1:4) %>% 
+  sample_n(10) %>%
+  head(10)
+```
+

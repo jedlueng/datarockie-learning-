@@ -1,0 +1,23 @@
+
+
+
+```{r}
+y <- mtcars$mpg 
+X <- mtcars [, 2:4]
+```
+
+#model training -01
+```{r}
+set.seed(42)
+train(mpg~ cyl + disp + hp,
+data = mtcars,
+method = "lm)
+```
+
+#Model Training -02 (X,y)
+```{r}
+set.seed(42)
+train(X,y, method ="lm" )
+```
+
+

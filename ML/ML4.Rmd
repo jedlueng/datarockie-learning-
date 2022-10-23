@@ -1,0 +1,137 @@
+Jedlueng 
+19 October 2022 
+
+#Get data and pre-processes
+
+```{r}
+data("PimaIndiansDiabetes")
+
+```
+
+##Data Complete??? 
+What is target??
+
+```{r}
+df <- PimaIndiansDiabetes 
+
+check_complete <- function(df) mean(complete.cases(df))
+
+print(check_complete(df))
+```
+
+
+```{r}
+glimpse(df)
+```
+
+```{r}
+df %>% count(diabetes) %>% mutate(pct = n/sum(n))
+```
+Imbalance class 
+
+target is not balance 
+
+How to solve?? 
+- Not using accuracy. 
+
+
+AUC ROC curve + F1 Score instead of accuracy 
+
+
+#Split data 
+##Normalize data 
+```{r}
+set.seed(42)
+id <- createDataPartition(y =df$diabetes,
+                          p = 0.8,
+                          list = FALSE)
+
+train_df <- df[id, ]
+test_df <- df[-id, ]
+
+
+```
+
+#Train model 
+```{r}
+set.seed(42)
+ctrl <- trainControl(
+  method = "cv", 
+  number = 5, 
+  verboseIter = TRUE 
+)
+```
+
+##Logistic model 
+```{r}
+
+logsitic_model <- train(diabetes ~., 
+                        data = train_df,
+                        method = "glm",
+                        metric ="Accuracy",
+                        preProcess = c("center", "scale"),
+                        trControl = ctrl
+                        )
+print(logsitic_model)
+```
+
+
+
+
+##Random Forest Model 
+```{r}
+rf_model <- train(diabetes ~., 
+                        data = train_df,
+                        method = "rf",
+                        metric ="Accuracy",
+                        preProcess = c("center", "scale"),
+                        trControl = ctrl
+                        )
+print(rf_model)
+```
+
+
+mtry = parameter 
+2 = highest effectiveness
+
+##Random Foest ROC 
+
+```{r}
+ctrl2 <- trainControl(
+  method = "cv", 
+  number = 5,
+  classProb = TRUE, #Important for ROC
+  summaryFunction = twoClassSummary,
+  verboseIter = TRUE 
+)
+rf_model <- train(diabetes ~., 
+                        data = train_df,
+                        method = "rf",
+                        metric ="ROC",
+                        preProcess = c("center", "scale"),
+                        trControl = ctrl2
+                        )
+print(rf_model)
+
+
+```
+
+
+#Test model 
+
+```{r}
+p <- predict(rf_model, newdata = test_df)
+
+mean(p ==test_df$diabetes)
+```
+
+
+##Confusion Matrix 
+```{r}
+confusionMatrix(p,test_df$diabetes,positive = "pos", mode = "prec_recall")
+```
+
+
+
+
+

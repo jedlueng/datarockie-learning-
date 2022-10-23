@@ -1,0 +1,38 @@
+Jedlueng 
+19 OCT 2022 
+
+#Ridge / lasso regression 
+
+```{r}
+df %>% glimpse() 
+```
+
+
+#Train model
+
+```{r}
+set.seed(42)
+
+# Alpha = 0 ridge 
+# Alpha = 1 Lasso 
+myGrid <- expand.grid(alpha = 0:1,
+lambda = seq(0.001,1,length = 20))
+
+regularized_model <- train(
+  diabetes ~., 
+  data = train_df, 
+  method = "glmnet",
+  tuneGrid = myGrid, 
+  trControl = trainControl(
+    method = "cv",
+    number =5,
+    verboseIter = TRUE 
+  ))
+```
+Test Model 
+
+
+```{r}
+
+```
+
