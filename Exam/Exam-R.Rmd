@@ -1,0 +1,98 @@
+Jedlueng 
+24 October 2022 
+Datarockie exam 
+
+```{r}
+10 -> x
+print(x)
+```
+
+
+```{r}
+x <- 10
+print(x)
+```
+
+
+```{r}
+x = 10
+print(x)
+```
+
+
+
+
+##Vector 
+```{r}
+s <- c(1,2,3,4)
+mean(s)
+```
+
+
+##Multiple data type??
+```{r}
+s <- c(1,"Jay", TRUE)
+s[3]
+```
+Cannot . It will be the same 
+
+# with dplyr test 
+
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+mtcars %>% select(starts_with("a"))
+```
+
+
+```{r}
+mtcars %>% select(1, 2:5,10)
+```
+
+```{r}
+mtcars %>% select(hp,wt,am)
+```
+
+```{r}
+select(mtcars,hp,wt,am)
+```
+
+
+```{r}
+mtcars %>% select (11,everything())
+```
+
+## With no dplyr
+```{r}
+mtcars %>% select(starts_with("a"))
+```
+
+```{r}
+mtcars %>% select(1,2:5,10)
+```
+
+
+
+
+
+```{r}
+mtcars %>% select(hp,wt,am)
+```
+
+
+```{r}
+select(mtcars,hp,wt,am)
+```
+
+
+```{r}
+mtcars %>% select(11,everything())
+```
+
+
+
+
+
